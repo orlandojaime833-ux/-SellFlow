@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SellFlow - Sua Loja</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui;background:var(--tg-theme-bg-color,#fff);color:var(--tg-theme-text-color,#000);padding:16px}
+        .container{max-width:600px;margin:0 auto}
+        .header{text-align:center;margin-bottom:24px;padding:24px;background:#f97316;border-radius:24px;color:#fff}
+        .header h1{font-size:1.8rem}
+        .card{background:var(--tg-theme-secondary-bg-color,#f0f0f0);border-radius:16px;padding:16px;margin-bottom:12px}
+        .product{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:12px;background:#fff;border-radius:12px}
+        .product-name{font-weight:600}
+        .product-price{color:#f97316;font-weight:700}
+        button{background:#f97316;color:#fff;border:none;padding:8px 16px;border-radius:10px;cursor:pointer}
+        .cart-item{display:flex;justify-content:space-between;margin-bottom:12px;padding:8px 0}
+        .total{font-size:1.2rem;font-weight:700;text-align:right;margin-top:16px;padding-top:16px;border-top:2px solid #f97316}
+        .nav{display:flex;gap:8px;margin-bottom:20px}
+        .nav-btn{flex:1;text-align:center;padding:12px;background:#f0f0f0;border-radius:12px;cursor:pointer}
+        .nav-btn.active{background:#f97316;color:#fff}
+        .hidden{display:none}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 SellFlow</h1>
+        <p>Sua loja no Telegram</p>
+    </div>
+
+    <div class="nav">
+        <div class="nav-btn active" onclick="showTab('loja')">🛍️ LOJA</div>
+        <div class="nav-btn" onclick="showTab('carrinho')">🛒 CARRINHO <span id="cartCount">(0)</span></div>
+    </div>
+
+    <div id="tabLoja"></div>
+    <div id="tabCarrinho" class="hidden"></div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.ready();
+
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    let products = [];
+
+    async function loadProducts() {
+        try {
+            const res = await fetch('https://sellflow.onrender.com/api/products');
+            const data = await res.json();
+            products = data;
+            renderLoja();
+        } catch(e) {
+            document.getElementById('tabLoja').innerHTML = '<div class="card">📦 Nenhum produto disponível</div>';
+        }
+    }
+
+    function renderLoja() {
+        if(!products.length) {
+            document.getElementById('tabLoja').innerHTML = '<div class="card">📦 Nenhum produto</div>';
+            return;
+        }
+        let html = '';
+        products.forEach(p => {
+            html += `
+                <div class="card">
+                    <div class="product">
+                        <div>
+                            <div class="product-name">${p.name}</div>
+                            <div class="product-price">$${p.price}</div>
+                        </div>
+                        <button onclick="addToCart(${p.id}, '${p.name}', ${p.price})">➕ Comprar</button>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('tabLoja').innerHTML = html;
+    }
+
+    function addToCart(id, name, price) {
+        const exist = cart.find(i => i.id === id);
+        if(exist) exist.qty = (exist.qty || 1) + 1;
+        else cart.push({id, name, price, qty: 1});
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        tg.showPopup({title:'✅', message:`${name} adicionado!`});
+    }
+
+    function updateCartCount() {
+        const total = cart.reduce((s,i)=> s + (i.qty||1),0);
+        document.getElementById('cartCount').innerHTML = `(${total})`;
+    }
+
+    function renderCarrinho() {
+        if(!cart.length) {
+            document.getElementById('tabCarrinho').innerHTML = '<div class="card">🛒 Carrinho vazio</div>';
+            return;
+        }
+        let html = '';
+        let total = 0;
+        cart.forEach((item, idx) => {
+            const subtotal = item.price * (item.qty || 1);
+            total += subtotal;
+            html += `
+                <div class="cart-item">
+                    <div><strong>${item.name}</strong><br>$${item.price} x ${item.qty || 1} = $${subtotal}</div>
+                    <button onclick="removeFromCart(${idx})">🗑️</button>
+                </div>
+            `;
+        });
+        html += `<div class="total">💰 TOTAL: $${total}</div>`;
+        html += `<button onclick="checkout()" style="width:100%;margin-top:16px">✅ FINALIZAR COMPRA</button>`;
+        document.getElementById('tabCarrinho').innerHTML = html;
+    }
+
+    function removeFromCart(idx) {
+        cart.splice(idx,1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        renderCarrinho();
+    }
+
+    function checkout() {
+        tg.showPopup({title:'💳', message:'Pagamento via xRocket em breve!'});
+    }
+
+    function showTab(tab) {
+        document.getElementById('tabLoja').classList.toggle('hidden', tab !== 'loja');
+        document.getElementById('tabCarrinho').classList.toggle('hidden', tab !== 'carrinho');
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        if(tab === 'carrinho') renderCarrinho();
+    }
+
+    updateCartCount();
+    loadProducts();
+</script>
+</body>
+</html>

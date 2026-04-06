@@ -100,7 +100,8 @@ async function getAllProducts() {
 app.post('/webhook', async (req, res) => {
     const { status, external_id, amount } = req.body;
     console.log(`📥 Webhook: ${status} - ${external_id} - $${amount}`);
-    
+    const webhook = require('./webhook');
+app.use('/webhook', webhook);
     if (status === 'paid') {
         await bot.telegram.sendMessage(ADMIN_ID, 
             `💰 *VENDA REALIZADA!*\n\nValor: $${amount}\nID: ${external_id}`,

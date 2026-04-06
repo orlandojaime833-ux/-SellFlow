@@ -14,7 +14,7 @@ const ADMIN_ID = 7991785009;
 const XROCKET_API_KEY = 'c01709a9c058bd25eeefea6b2';
 
 // String do Neon
-const DATABASE_URL = 'postgresql://orlando_store_owner:npg_7c2M7F2drHfM@ep-tiny-glade-a87c7ok8-pooler.eastus2.azure.neon.tech/orlando_store?sslmode=require';
+const DATABASE_URL = 'postgresql://neondb_owner:npg_ku7BywFcX4QE@ep-wild-tree-anlx019d-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require';
 
 // ============ INICIALIZAÇÃO ============
 const bot = new Telegraf(BOT_TOKEN);
